@@ -1,46 +1,73 @@
 # Data pipeline
 
-Dataset ingestion lives here. Keep downloads separate from preprocessing so source-specific formats do not leak into model code.
+The first reproducible experiment uses **IBTrACS** for storm-track labels and **TCIR** for satellite frames. Raw archives are intentionally kept outside Git.
 
-## First real-data workflow
+## 1. Prepare IBTrACS
 
-The repository does **not** contain raw satellite archives. Keep those files in local/external storage and create a small JSONL satellite manifest.
+Download an approved IBTrACS CSV and keep it under a local data directory. The loader filters the North Indian Ocean basin using the IBTrACS `NI` basin code and extracts timestamp, position, wind and pressure fields.
 
-One line per channel frame:
+## 2. Prepare TCIR metadata
 
-```json
-{"storm_id":"2020-01","timestamp":"2020-05-16T06:00:00+00:00","source":"TCIR","channel":"IR","path":"/data/tcir/2020-01/ir.nc"}
+TCIR's exact archive layout can vary by release/download method, so do not hard-code an assumed directory structure. Create a metadata CSV containing:
+
+```text
+storm_id,timestamp,channel,path,latitude,longitude
 ```
 
-Supported channels: `IR`, `WV`, `VIS`, `MW`.
+`latitude` and `longitude` are optional. `channel` must be one of `IR,WV,VIS,MW`.
 
-From the repository root:
+Convert it to normalized satellite JSONL:
 
 ```bash
-python -m ml.data_pipeline.manifest_from_joined path/to/ibtracs.csv path/to/satellite.jsonl data/manifests/all.jsonl
+python -m ml.data_pipeline.build_tcir_manifest \
+  data/raw/tcir_metadata.csv \
+  data/raw/tcir_satellite.jsonl
 ```
 
-The command:
+The resulting paths must point to files available on the machine running the training pipeline.
 
-1. loads North Indian Ocean (`NI`) IBTrACS records;
-2. joins the nearest satellite frame for each available channel;
-3. creates a 24-hour future track target;
-4. derives the IMD cyclone class from wind speed;
-5. stores file references plus labels in JSONL.
+## 3. Build the training manifest
 
-### Required metadata
+The joined-data builder matches track observations to the nearest satellite frame within the configured tolerance, then creates a 24-hour forecast sample. The current baseline uses one input frame and one 24-hour target point.
 
-- storm ID / name
-- basin
-- observation timestamp
-- latitude / longitude
-- wind speed and pressure when available
-- source dataset and version
-- satellite channels present
-- source file identifier/checksum
+```bash
+python -m ml.data_pipeline.manifest_from_joined \
+  data/raw/ibtracs.csv \
+  data/raw/tcir_satellite.jsonl \
+  data/manifests/all.jsonl
+```
 
-Raw data should remain outside GitHub.
+## 4. Split by storm
 
-A missing satellite channel is allowed by the join stage and is zero-filled by the tensorizer unless `require_channels=True`. For the first real experiment, record channel coverage and compare results for complete vs partial multi-source inputs.
+Never randomly split individual frames. Storm-level splitting prevents frames from the same cyclone appearing in both training and test sets.
 
-The current baseline is a single-frame CNN. Temporal sequence modeling will be added after the data pipeline is validated on real North Indian Ocean storms.
+```bash
+python -m ml.training.split_manifest \
+  data/manifests/all.jsonl \
+  --output-dir data/manifests/splits
+```
+
+## 5. Train the baseline
+
+```bash
+python -m ml.training.train_baseline \
+  data/manifests/splits/train.jsonl \
+  --epochs 20 \
+  --batch-size 16 \
+  --output ml/artifacts/baseline.pt
+```
+
+## 6. Evaluate
+
+```bash
+python -m ml.training.evaluate_baseline \
+  data/manifests/splits/test.jsonl \
+  ml/artifacts/baseline.pt
+```
+
+### Important baseline limitations
+
+- The current manifest contains cyclone-positive samples only, so the detection head is **not yet a meaningful cyclone-vs-no-cyclone benchmark**. Non-cyclone satellite samples must be added before reporting detection precision/recall/F1.
+- The current track target is a single 24-hour point. Multi-step +6/+12/+24/+48-hour forecasting comes after this baseline is reproducible.
+- Channel normalization is currently generic; production training should use channel-specific statistics calculated from the training split.
+- Raw TCIR/IBTrACS archives are not committed to GitHub.
