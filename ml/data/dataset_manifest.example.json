@@ -1,0 +1,17 @@
+{
+  "dataset_name": "CycloneAI-NIO-v1",
+  "version": "0.1.0",
+  "target_region": "NIO",
+  "sources": [
+    {
+      "name": "IBTrACS",
+      "role": "track_labels",
+      "url": "https://www.ncei.noaa.gov/products/international-best-track-archive"
+    },
+    {
+      "name": "TCIR",
+      "role": "satellite",
+      "url": "https://github.com/BoyoChen/TCIR"
+    }
+  ]
+}
