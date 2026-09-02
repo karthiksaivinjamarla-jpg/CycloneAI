@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CycloneAI Dataset Manifest",
+  "type": "object",
+  "required": ["dataset_name", "version", "sources", "target_region"],
+  "properties": {
+    "dataset_name": {"type": "string"},
+    "version": {"type": "string"},
+    "target_region": {"type": "string", "enum": ["NIO"]},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "role"],
+        "properties": {
+          "name": {"type": "string"},
+          "role": {"type": "string", "enum": ["track_labels", "satellite", "supplementary"]},
+          "url": {"type": "string"},
+          "version": {"type": "string"}
+        }
+      }
+    }
+  }
+}
