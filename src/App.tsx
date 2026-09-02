@@ -64,6 +64,8 @@ function App() {
     }
   };
 
+  const lastTrackPoint = analysis.track.length > 0 ? analysis.track[analysis.track.length - 1] : null;
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -83,7 +85,7 @@ function App() {
         <section className="dashboard-grid">
           <div className="map-card panel">
             <div className="panel-head"><div><span className="section-label">LIVE ANALYSIS</span><h2>Bay of Bengal</h2></div><div className="head-actions"><button className="ghost-btn"><Layers3 size={15}/> Layers</button><button className="ghost-btn" onClick={runNewAnalysis}><RefreshCw size={15}/> Refresh</button></div></div>
-            <div className="map-stage"><CycloneMap analysis={analysis}/><div className="map-overlay-title"><span>INTERACTIVE TRACK MAP</span><small>Observed vs AI forecast</small></div><div className="forecast-card"><span>48H FORECAST</span><strong>{analysis.track.at(-1)?.latitude.toFixed(1)}°N · {analysis.track.at(-1)?.longitude.toFixed(1)}°E</strong><small>{analysis.track.at(-1)?.wind_knots} kt predicted wind</small></div><div className="map-legend"><span><i className="legend-observed"/> Observed</span><span><i className="legend-ai"/> AI forecast</span><span><i className="legend-uncertainty"/> Uncertainty</span></div></div>
+            <div className="map-stage"><CycloneMap analysis={analysis}/><div className="map-overlay-title"><span>INTERACTIVE TRACK MAP</span><small>Observed vs AI forecast</small></div><div className="forecast-card"><span>48H FORECAST</span><strong>{lastTrackPoint ? `${lastTrackPoint.latitude.toFixed(1)}°N · ${lastTrackPoint.longitude.toFixed(1)}°E` : 'No forecast'}</strong><small>{lastTrackPoint ? `${lastTrackPoint.wind_knots} kt predicted wind` : 'No forecast data'}</small></div><div className="map-legend"><span><i className="legend-observed"/> Observed</span><span><i className="legend-ai"/> AI forecast</span><span><i className="legend-uncertainty"/> Uncertainty</span></div></div>
           </div>
 
           <aside className="side-stack">
