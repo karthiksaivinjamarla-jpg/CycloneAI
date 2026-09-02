@@ -10,6 +10,40 @@ def mean_absolute_error(predicted: Sequence[float], actual: Sequence[float]) -> 
     return sum(abs(p - a) for p, a in zip(predicted, actual)) / len(predicted)
 
 
+def root_mean_squared_error(predicted: Sequence[float], actual: Sequence[float]) -> float:
+    if len(predicted) != len(actual) or not predicted:
+        raise ValueError("predicted and actual must have the same non-empty length")
+    return math.sqrt(sum((p - a) ** 2 for p, a in zip(predicted, actual)) / len(predicted))
+
+
+def binary_classification_metrics(predicted: Sequence[int], actual: Sequence[int]) -> dict[str, float]:
+    if len(predicted) != len(actual) or not predicted:
+        raise ValueError("predicted and actual must have the same non-empty length")
+    tp = sum(p == 1 and a == 1 for p, a in zip(predicted, actual))
+    tn = sum(p == 0 and a == 0 for p, a in zip(predicted, actual))
+    fp = sum(p == 1 and a == 0 for p, a in zip(predicted, actual))
+    fn = sum(p == 0 and a == 1 for p, a in zip(predicted, actual))
+    precision = tp / max(tp + fp, 1)
+    recall = tp / max(tp + fn, 1)
+    f1 = 2 * precision * recall / max(precision + recall, 1e-12)
+    accuracy = (tp + tn) / len(actual)
+    return {"accuracy": accuracy, "precision": precision, "recall": recall, "f1": f1}
+
+
+def macro_f1(predicted: Sequence[int], actual: Sequence[int], num_classes: int) -> float:
+    if len(predicted) != len(actual) or not predicted:
+        raise ValueError("predicted and actual must have the same non-empty length")
+    scores = []
+    for cls in range(num_classes):
+        tp = sum(p == cls and a == cls for p, a in zip(predicted, actual))
+        fp = sum(p == cls and a != cls for p, a in zip(predicted, actual))
+        fn = sum(p != cls and a == cls for p, a in zip(predicted, actual))
+        precision = tp / max(tp + fp, 1)
+        recall = tp / max(tp + fn, 1)
+        scores.append(2 * precision * recall / max(precision + recall, 1e-12))
+    return sum(scores) / num_classes
+
+
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     radius = 6371.0088
     p1, p2 = math.radians(lat1), math.radians(lat2)
