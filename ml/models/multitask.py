@@ -13,15 +13,12 @@ from typing import Any
 def build_model(
     channels: int = 4,
     num_classes: int = 7,
-    forecast_steps: int = 4,
+    forecast_steps: int = 1,
 ) -> Any:
     """Build a CNN with detection, class, intensity and track heads.
 
-    Outputs:
-      detection_logits: [B, 1]
-      class_logits: [B, num_classes]
-      intensity: [B, 1] (wind knots)
-      track: [B, forecast_steps, 2] (latitude, longitude offsets)
+    The first baseline predicts one configurable future point. A later temporal
+    model can set forecast_steps=4 for +6/+12/+24/+48 hour forecasts.
     """
     try:
         import torch
