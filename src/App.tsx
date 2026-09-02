@@ -3,6 +3,7 @@ import {
   Activity, AlertTriangle, Cloud, Eye, Layers3, Menu, Play, Radio,
   RefreshCw, Satellite, Sparkles, Wind, X,
 } from 'lucide-react';
+import { CycloneMap } from './components/CycloneMap';
 import { runAnalysis } from './services/modelApi';
 import type { CycloneAnalysis, SatelliteSource } from './types/analysis';
 
@@ -19,12 +20,17 @@ const INITIAL: CycloneAnalysis = {
   intensity: { wind_knots: 82, pressure_hpa: 970 },
   center: { latitude: 15.2, longitude: 82.4 },
   movement: { direction: 'NW', speed_knots: 12 },
+  observed_track: [
+    { hours: -18, latitude: 14.1, longitude: 79.7, wind_knots: 74 },
+    { hours: -12, latitude: 14.5, longitude: 80.6, wind_knots: 77 },
+    { hours: -6, latitude: 14.9, longitude: 81.5, wind_knots: 80 },
+  ],
   track: [
-    { hours: 6, latitude: 15.8, longitude: 83.1, wind_knots: 84 },
-    { hours: 12, latitude: 16.4, longitude: 83.9, wind_knots: 86 },
-    { hours: 24, latitude: 17.2, longitude: 85.1, wind_knots: 88 },
-    { hours: 36, latitude: 18.0, longitude: 86.2, wind_knots: 82 },
-    { hours: 48, latitude: 18.8, longitude: 87.1, wind_knots: 74 },
+    { hours: 6, latitude: 15.8, longitude: 83.1, wind_knots: 84, uncertainty_km: 45 },
+    { hours: 12, latitude: 16.4, longitude: 83.9, wind_knots: 86, uncertainty_km: 70 },
+    { hours: 24, latitude: 17.2, longitude: 85.1, wind_knots: 88, uncertainty_km: 105 },
+    { hours: 36, latitude: 18.0, longitude: 86.2, wind_knots: 82, uncertainty_km: 145 },
+    { hours: 48, latitude: 18.8, longitude: 87.1, wind_knots: 74, uncertainty_km: 190 },
   ],
   explainability: { labels: ['Deep convection', 'Curved banding', 'Eye structure'] },
   model: { version: 'mock-v0.1', generated_at: '2026-09-02T12:00:00Z' },
@@ -77,16 +83,7 @@ function App() {
         <section className="dashboard-grid">
           <div className="map-card panel">
             <div className="panel-head"><div><span className="section-label">LIVE ANALYSIS</span><h2>Bay of Bengal</h2></div><div className="head-actions"><button className="ghost-btn"><Layers3 size={15}/> Layers</button><button className="ghost-btn" onClick={runNewAnalysis}><RefreshCw size={15}/> Refresh</button></div></div>
-            <div className="map-stage">
-              <div className="grid-lines"/><div className="ocean-glow"/>
-              <div className="landmass india"><span>INDIA</span></div><div className="landmass sri"><span>SRI LANKA</span></div><div className="landmass myanmar"><span>MYANMAR</span></div>
-              <div className="map-label label-andaman">ANDAMAN SEA</div><div className="map-label label-bay">BAY OF BENGAL</div>
-              <div className="track actual"><span className="track-title">Observed</span><b className="dot d1"/><b className="dot d2"/><b className="dot d3"/><b className="dot d4"/></div>
-              <div className="track predicted"><span className="track-title">AI forecast</span><b className="p-dot p1"/><b className="p-dot p2"/><b className="p-dot p3"/><b className="p-dot p4"/></div>
-              <div className="storm-core"><div className="rings"><i/><i/><i/></div><strong>{analysis.cyclone_detected ? 'CYCLONE' : 'NO STORM'}</strong><span>Current center</span></div>
-              <div className="forecast-card"><span>48H FORECAST</span><strong>{analysis.track.at(-1)?.latitude.toFixed(1)}°N · {analysis.track.at(-1)?.longitude.toFixed(1)}°E</strong><small>{analysis.track.at(-1)?.wind_knots} kt predicted wind</small></div>
-              <div className="map-legend"><span><i className="legend-observed"/> Observed</span><span><i className="legend-ai"/> AI forecast</span></div>
-            </div>
+            <div className="map-stage"><CycloneMap analysis={analysis}/><div className="map-overlay-title"><span>INTERACTIVE TRACK MAP</span><small>Observed vs AI forecast</small></div><div className="forecast-card"><span>48H FORECAST</span><strong>{analysis.track.at(-1)?.latitude.toFixed(1)}°N · {analysis.track.at(-1)?.longitude.toFixed(1)}°E</strong><small>{analysis.track.at(-1)?.wind_knots} kt predicted wind</small></div><div className="map-legend"><span><i className="legend-observed"/> Observed</span><span><i className="legend-ai"/> AI forecast</span><span><i className="legend-uncertainty"/> Uncertainty</span></div></div>
           </div>
 
           <aside className="side-stack">
@@ -100,7 +97,7 @@ function App() {
           <div className="panel explain-panel"><div className="section-label">EXPLAINABILITY</div><h3>Why the model is confident</h3><div className="heatmap"><div className="heat-core"/><div className="heat-band one"/><div className="heat-band two"/><span>Grad-CAM attention · {analysis.model.version}</span></div><div className="explain-tags">{analysis.explainability.labels.map((label) => <span key={label}>✓ {label}</span>)}</div></div>
         </section>
 
-        <section className="cta-panel"><div><div className="section-label">MODEL INTEGRATION</div><h2>Run a new cyclone analysis</h2><p>{error || 'The frontend now uses a typed model adapter. Set VITE_API_BASE_URL when the FastAPI service is ready.'}</p></div><button className="primary-btn" onClick={runNewAnalysis} disabled={running}>{running ? <><RefreshCw className="spin"/> Running model…</> : <><Play/> Run analysis</>}</button></section>
+        <section className="cta-panel"><div><div className="section-label">MODEL INTEGRATION</div><h2>Run a new cyclone analysis</h2><p>{error || 'The frontend uses a typed model adapter. Set VITE_API_BASE_URL when the FastAPI service is ready.'}</p></div><button className="primary-btn" onClick={runNewAnalysis} disabled={running}>{running ? <><RefreshCw className="spin"/> Running model…</> : <><Play/> Run analysis</>}</button></section>
       </main>
       <footer><span><Wind size={15}/> CycloneAI</span><span>AI-assisted decision support · Prototype</span><span>Model {analysis.model.version} · API ready</span></footer>
     </div>
