@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import './CycloneMap.css';
 import type { CycloneAnalysis, TrackPoint } from '../types/analysis';
 
 type Props = {
