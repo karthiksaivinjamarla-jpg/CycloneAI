@@ -1,0 +1,1 @@
+UI components live here. Keep map, charts, and analysis widgets independent from API services.
